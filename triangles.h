@@ -44,7 +44,7 @@ public:
 };
 
 bool point_in_unit_triangle (const point p) {
-    return (((p.get_x() + p.get_y()) < 1) && (p.get_x() > 0) && (p.get_y() > 0));
+    return (((p.get_x() + p.get_y()) <= 1) && (p.get_x() >= 0) && (p.get_y() >= 0));
 }
 
 bool segment_intersects_or_in_unit_triangle(const point rv1, const point rv2) {
@@ -72,7 +72,7 @@ bool segment_intersects_or_in_unit_triangle(const point rv1, const point rv2) {
     }
     return false;
 }
-point intersect_xy (const point p1, const point p2) {
+point intersect_xy (const point p1, const point p2) { //returns point where segment [p1, p2] intersects xy
     return point(p1.get_x() + (p2.get_x() - p1.get_x()) * std::abs(p1.get_z()) / (std::abs(p1.get_z()) + std::abs(p2.get_z())),
                  p1.get_y() + (p2.get_y() - p1.get_y()) * std::abs(p1.get_z()) / (std::abs(p1.get_z()) + std::abs(p2.get_z())),
                  0);
@@ -140,7 +140,7 @@ public:
         return B.transpose();
     }
 
-    point mul_by_vector (const point &v) const{
+    point mul_by_vector (const point &v) const{ //multiplies matrix and vector v
         return point (A[0][0] * v.get_x() + A[0][1] * v.get_y() + A[0][2] * v.get_z(),
                       A[1][0] * v.get_x() + A[1][1] * v.get_y() + A[1][2] * v.get_z(),
                       A[2][0] * v.get_x() + A[2][1] * v.get_y() + A[2][2] * v.get_z());
@@ -154,20 +154,19 @@ class triangle {
 public:
     triangle (point p1, point p2, point p3) : p1(p1), p2(p2), p3(p3) {}
     bool is_intersecting (const triangle &rv) const {
-        triangle t1 = move_by_vec(p1);
-        triangle t2 = rv.move_by_vec(p1);
-        point n = t1.p2.vector_mul(t1.p3);
-        matrix A = matrix(t1.p2, t1.p3, n).inverse();
-        t1 = t1.apply_operator(A);
+        triangle t1 = move_by_vec(p1);  //move the first triangle (p1) to (0, 0, 0)
+        triangle t2 = rv.move_by_vec(p1); //move the second one equally
+        point n = t1.p2.vector_mul(t1.p3);  //find normal vector to first triangle in (0, 0, 0)
+        matrix A = matrix(t1.p2, t1.p3, n).inverse(); //A makes first triangle -> unit triangle in plane 0xy
+        t1 = t1.apply_operator(A); //apply linear operator A to both triangles
         t2 = t2.apply_operator(A);
-
-        auto z_coords = std::vector{t2.p1.get_z(), t2.p2.get_z(), t2.p3.get_z()};
+//now we need to check if second triangle intersects unit triangle
+        auto z_coords = std::vector<double>{t2.p1.get_z(), t2.p2.get_z(), t2.p3.get_z()};
         std::sort(z_coords.begin(), z_coords.end());
 
         if((z_coords[0] > 0) || (z_coords[2] < 0)) {
             return false;
-        } else if(z_coords[0] == z_coords[2]) { //case with triangle in plane
-            // Tut shto to bufet
+        } else if(z_coords[0] == z_coords[2]) { //case with triangle in plane oxy
 
             if(segment_intersects_or_in_unit_triangle(t2.p1, t2.p2) ||
             segment_intersects_or_in_unit_triangle(t2.p2, t2.p3) ||
@@ -185,11 +184,11 @@ public:
 
         } else if((z_coords[0] == 0) || (z_coords[2] == 0)) { //case with dot in unit triangle
             point p_in_plane(0, 0, 0);
-            for (const auto &p : std::vector{t2.p1, t2.p2, t2.p3}) {
+            for (const auto &p : std::vector<point>{t2.p1, t2.p2, t2.p3}) {
                 if (p.get_z() == 0) p_in_plane = p;
             }
             return point_in_unit_triangle (p_in_plane);
-        } else { //case with segment in plane
+        } else { //case with segment in plane oxy
             point a(0, 0, 0), b(0, 0, 0);
             if (t2.p1.get_z() * t2.p2.get_z() >= 0) {
                 a = intersect_xy(t2.p1, t2.p3);// p3
@@ -244,7 +243,6 @@ public:
     }
 
 };
-
 
 
 #endif //TRIANGLES_H
