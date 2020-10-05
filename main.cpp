@@ -1,39 +1,51 @@
+#include <algorithm>
 #include <iostream>
+#include <unordered_map>
 #include "triangles.h"
 
-point dot_init(double coord[3]) { //makes a point from 3 coordinates from array
-    return point(coord[0], coord[1], coord[2]);
-}
+using namespace triangles;
 
 int main() {
-    int N, counter = 0;
-    double coord[3];
+    int N;
+    double coord[9];
     std::cin >> N;
-    auto dots = std::vector<point>{};
+    auto triangles = std::vector<triangle>{};
+    auto result = std::vector<int>{};
+    std::unordered_map<int, bool> is_checked(N);
 
     for (int i = 0; i < N; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                std::cin >> coord[k];
-            }
-            dots.push_back(dot_init(coord));
+        for (int j = 0; j < 9; j++) {
+            std::cin >> coord[j];
         }
+        is_checked[i] = false;
+        triangles.emplace_back(
+            point{coord[0], coord[1], coord[2]},
+            point{coord[3], coord[4], coord[5]},
+            point{coord[6], coord[7], coord[8]}
+        );
     }
 
     for(int i = 0; i < N; i++) {
-        for(int j = 0; j < N; j++ ) {
-            if(i != j) {
-                if(triangle(dots[3 * i], dots[3 * i + 1], dots[3 * i + 2]).is_intersecting(
-                        triangle(dots[3 * j], dots[3 * j + 1], dots[3 * j + 2]))) {
-                    if(counter != (i + 1)) {
-                        counter = i + 1;
-                        std::cout << (i + 1) << "  ";
+        if(!is_checked[i]) {
+            bool is_current_checked = false;
+            for (int j = 0; j < N; j++) {
+                if (i != j) {
+                    if (triangles[i].is_intersecting(triangles[j])) {
+                        is_checked[j] = true;
+                        result.push_back(j);
+                        if (!is_current_checked) {
+                            result.push_back(i);
+                            is_current_checked = true;
+                        }
                     }
                 }
             }
         }
     }
-
+    std::sort(result.begin(), result.end());
+    for(auto i : result) {
+        std::cout << i << "  ";
+    }
     return 0;
 }
 
@@ -46,3 +58,20 @@ void test () { //not used
             )
     );
 }
+
+//2
+//0 0 0 1 0 0 0 1 0
+//0 0.5 -0.5 0 0.5 0.5 -1 0 0
+//
+//3
+//0 0 0 1 0 0 0 1 0
+//5 5 5 5 5 5 5 5 5
+//0 0.5 -0.5 0 0.5 0.5 -1 0 0
+//
+//2
+//0 0 0 1000000000 0 0 0 1000000000 0
+//0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
+//
+//2
+//0 0 0 0.0001 0 0 0 0.0001 0
+//0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
