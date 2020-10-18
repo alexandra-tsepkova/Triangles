@@ -12,16 +12,20 @@
 
 namespace triangles {
 
-    double pr(double x) {  //round to precision
-        return std::round(x * 1000000000000) / 1000000000000.0;
-//    return x;
+    const double epsilon = pow(10.0, -14.0);
+
+    bool epsilon_eq (const double &x, const double &y) {
+        return (std::abs(x - y) < epsilon);
+    }
+    bool epsilon_le (const double &x, const double &y) {
+        return (x - y) < epsilon;
     }
 
     class point {
         double x, y, z;
 
     public:
-        point(double x, double y, double z) : x(pr(x)), y(pr(y)), z(pr(z)) {}
+        point(double x, double y, double z) : x(x), y(y), z(z) {}
 
         double get_x() const {
             return x;
@@ -35,16 +39,16 @@ namespace triangles {
             return z;
         };
 
-        point operator+(const point &rv) const {
-            return point(x + rv.x, y + rv.y, z + rv.z);
+        friend point operator+ (const point &lv, const point &rv) {
+            return point(lv.x + rv.x, lv.y + rv.y, lv.z + rv.z);
         }
 
         point operator-() const {
-            return point(-x, -y, -z);
+            return {-x, -y, -z};
         }
 
-        point operator-(const point &rv) const {
-            return *this + (-rv);
+        friend point operator-(const point &lv, const point &rv) {
+            return lv + (-rv);
         }
 
         point vector_mul(const point &rv) const { //vector multiplication
@@ -55,29 +59,29 @@ namespace triangles {
 
     };
 
-    bool point_in_unit_triangle(const point p) {
-        return (((p.get_x() + p.get_y()) <= 1) && (p.get_x() >= 0) && (p.get_y() >= 0));
+    bool point_in_unit_triangle(const point p){
+        return (!epsilon_le(1, (p.get_x() + p.get_y())) && !epsilon_le(p.get_x(), 0) && !epsilon_le(p.get_y(), 0));
     }
 
     bool segment_intersects_or_in_unit_triangle(const point rv1, const point rv2) {
         if ((point_in_unit_triangle(rv1)) || (point_in_unit_triangle(rv2))) {
             return true;
         } else {
-            if ((rv1.get_x() * rv2.get_x()) < 0) {
-                double y_c = ((rv1.get_y() < rv2.get_y()) ? rv1.get_y() : rv2.get_y()) +
+            if (epsilon_le(rv1.get_x() * rv2.get_x(), 0)) {
+                double y_c = (epsilon_le(rv1.get_y(), rv2.get_y()) ? rv1.get_y() : rv2.get_y()) +
                              std::abs(rv1.get_y() - rv2.get_y()) *
-                             std::abs((rv1.get_y() < rv2.get_y()) ? rv1.get_x() : rv2.get_x()) /
+                             std::abs(epsilon_le(rv1.get_y(), rv2.get_y()) ? rv1.get_x() : rv2.get_x()) /
                              std::abs(rv1.get_x() - rv2.get_x());
-                if ((y_c <= 1) && (y_c >= 0)) {
+                if (!epsilon_le(1, y_c) && !epsilon_le(y_c, 0)) {
                     return true;
                 }
             }
             if ((rv1.get_y() * rv2.get_y()) < 0) {
-                double x_c = ((rv1.get_x() < rv2.get_x()) ? rv1.get_x() : rv2.get_x()) +
+                double x_c = (epsilon_le(rv1.get_x(), rv2.get_x()) ? rv1.get_x() : rv2.get_x()) +
                              std::abs(rv1.get_x() - rv2.get_x()) *
-                             std::abs((rv1.get_x() < rv2.get_x()) ? rv1.get_y() : rv2.get_y()) /
+                             std::abs(epsilon_le(rv1.get_x(), rv2.get_x()) ? rv1.get_y() : rv2.get_y()) /
                              std::abs(rv1.get_y() - rv2.get_y());
-                if ((x_c <= 1) && (x_c >= 0)) {
+                if (!epsilon_le(1, x_c) && !epsilon_le(x_c, 0)) {
                     return true;
                 }
             }
@@ -165,6 +169,7 @@ namespace triangles {
 
     };
 
+
     class triangle {
         point p1, p2, p3;
 
@@ -188,17 +193,17 @@ namespace triangles {
         bool case_point_in_plane (const triangle &t2) const { //checks if point in oxy intersects unit triangle in oxy
             point p_in_plane(0, 0, 0);
             for (const auto &p : std::vector<point>{t2.p1, t2.p2, t2.p3}) {
-                if (p.get_z() == 0) p_in_plane = p;
+                if (epsilon_eq(p.get_z(), 0)) p_in_plane = p;
             }
             return point_in_unit_triangle(p_in_plane);
         }
 
         bool case_segment_in_plane (const triangle &t2) const { //checks if segment in oxy intersects unit triangle in oxy
             point a(0, 0, 0), b(0, 0, 0);
-            if (t2.p1.get_z() * t2.p2.get_z() >= 0) {
+            if (!epsilon_le(t2.p1.get_z() * t2.p2.get_z(), 0)) {
                 a = intersect_xy(t2.p1, t2.p3);// p3
                 b = intersect_xy(t2.p2, t2.p3);
-            } else if (t2.p1.get_z() * t2.p3.get_z() >= 0) {
+            } else if (!epsilon_le(t2.p1.get_z() * t2.p3.get_z(), 0)) {
                 a = intersect_xy(t2.p1, t2.p2);
                 b = intersect_xy(t2.p3, t2.p2);// p2
             } else {
@@ -214,6 +219,9 @@ namespace triangles {
             triangle t1 = move_by_vec(p1);  //move the first triangle (p1) to (0, 0, 0)
             triangle t2 = rv.move_by_vec(p1); //move the second one equally
             point n = t1.p2.vector_mul(t1.p3);  //find normal vector to first triangle in (0, 0, 0)
+            if (epsilon_eq(matrix(t1.p2, t1.p3, n).det(), 0)) {
+                return rv.is_intersecting(*this);
+            }
             matrix A = matrix(t1.p2, t1.p3, n).inverse(); //A makes first triangle -> unit triangle in plane 0xy
             t1 = t1.apply_operator(A); //apply linear operator A to both triangles
             t2 = t2.apply_operator(A);
@@ -221,12 +229,12 @@ namespace triangles {
             auto z_coords = std::vector<double>{t2.p1.get_z(), t2.p2.get_z(), t2.p3.get_z()};
             std::sort(z_coords.begin(), z_coords.end());
 
-            if ((z_coords[0] > 0) || (z_coords[2] < 0)) {
+            if (epsilon_le(0, z_coords[0]) || epsilon_le(z_coords[2], 0)) {
                 return false;
-            } else if (z_coords[0] == z_coords[2]) { //case with triangle in plane oxy
+            } else if (epsilon_eq(z_coords[0],z_coords[2])) { //case with triangle in plane oxy
                 return case_triangle_in_plane(t2, rv);
 
-            } else if ((z_coords[0] == 0) || (z_coords[2] == 0)) { //case with dot in unit triangle
+            } else if (epsilon_eq(z_coords[0], 0) || epsilon_eq(z_coords[2], 0)) { //case with dot in unit triangle
                 return case_point_in_plane(t2);
             } else { //case with segment in plane oxy
                 return case_segment_in_plane(t2);

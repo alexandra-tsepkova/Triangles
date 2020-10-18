@@ -31,8 +31,10 @@ int main() {
             for (int j = 0; j < N; j++) {
                 if (i != j) {
                     if (triangles[i].is_intersecting(triangles[j])) {
-                        is_checked[j] = true;
-                        result.push_back(j);
+                        if(!is_checked[j]) {
+                            is_checked[j] = true;
+                            result.push_back(j);
+                        }
                         if (!is_current_checked) {
                             result.push_back(i);
                             is_current_checked = true;
@@ -67,7 +69,7 @@ void test () { //not used
 //0 0 0 1 0 0 0 1 0
 //5 5 5 5 5 5 5 5 5
 //0 0.5 -0.5 0 0.5 0.5 -1 0 0
-//
+
 //2
 //0 0 0 1000000000 0 0 0 1000000000 0
 //0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
@@ -75,3 +77,9 @@ void test () { //not used
 //2
 //0 0 0 0.0001 0 0 0 0.0001 0
 //0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
+//5
+//10 0 0 0 10 0 0 0 10
+//30 0 0 0 30 0 0 0 30
+//50 0 0 0 50 0 0 0 50
+//70 0 0 0 70 0 0 0 70
+//0 0 0 100 100 0 100 100 100
