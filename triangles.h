@@ -14,6 +14,12 @@ namespace triangles {
 
     const double epsilon = pow(10.0, -14.0);
 
+    enum status {
+        intersecting,
+        to_the_left,
+        to_the_right
+    };
+
     bool epsilon_eq (const double &x, const double &y) {
         return (std::abs(x - y) < epsilon);
     }
@@ -215,7 +221,7 @@ namespace triangles {
     public:
         triangle(point p1, point p2, point p3) : p1(p1), p2(p2), p3(p3) {}
 
-        bool is_intersecting(const triangle &rv) const {
+        std::pair<bool, status> is_intersecting(const triangle &rv) const {
             triangle t1 = move_by_vec(p1);  //move the first triangle (p1) to (0, 0, 0)
             triangle t2 = rv.move_by_vec(p1); //move the second one equally
             point n = t1.p2.vector_mul(t1.p3);  //find normal vector to first triangle in (0, 0, 0)
@@ -230,14 +236,15 @@ namespace triangles {
             std::sort(z_coords.begin(), z_coords.end());
 
             if (epsilon_le(0, z_coords[0]) || epsilon_le(z_coords[2], 0)) {
-                return false;
+                if (epsilon_le(0, z_coords[0])) return std::make_pair(false, to_the_right);
+                else return std::make_pair(false, to_the_left);
             } else if (epsilon_eq(z_coords[0],z_coords[2])) { //case with triangle in plane oxy
-                return case_triangle_in_plane(t2, rv);
+                return std::make_pair(case_triangle_in_plane(t2, rv), intersecting);
 
             } else if (epsilon_eq(z_coords[0], 0) || epsilon_eq(z_coords[2], 0)) { //case with dot in unit triangle
-                return case_point_in_plane(t2);
+                return std::make_pair(case_point_in_plane(t2), intersecting);
             } else { //case with segment in plane oxy
-                return case_segment_in_plane(t2);
+                return std::make_pair(case_segment_in_plane(t2), intersecting);
             }
         }
 
@@ -247,6 +254,11 @@ namespace triangles {
 
         triangle apply_operator(const matrix &A) const {
             return triangle(A.mul_by_vector(p1), A.mul_by_vector(p2), A.mul_by_vector(p3));
+        }
+
+        bool is_degenerate() const {
+            point n = p2.vector_mul(p3);
+            return epsilon_eq(matrix(p2, p3, n).det(), 0);
         }
 
         void print_triangle() const {
