@@ -26,6 +26,9 @@ namespace triangles {
     bool epsilon_le (const double &x, const double &y) {
         return (x - y) < epsilon;
     }
+    bool epsilon_leq (const double &x, const double &y) {
+        return (x - y) <= epsilon;
+    }
 
     class point {
         double x, y, z;
@@ -66,14 +69,14 @@ namespace triangles {
     };
 
     bool point_in_unit_triangle(const point p){
-        return (!epsilon_le(1, (p.get_x() + p.get_y())) && !epsilon_le(p.get_x(), 0) && !epsilon_le(p.get_y(), 0));
+        return (epsilon_leq((p.get_x() + p.get_y()), 1) && epsilon_leq(0, p.get_x()) && epsilon_leq(0, p.get_y()));
     }
 
     bool segment_intersects_or_in_unit_triangle(const point rv1, const point rv2) {
         if ((point_in_unit_triangle(rv1)) || (point_in_unit_triangle(rv2))) {
             return true;
         } else {
-            if (epsilon_le(rv1.get_x() * rv2.get_x(), 0)) {
+            if (!epsilon_leq(0, rv1.get_x() * rv2.get_x())) {
                 double y_c = (epsilon_le(rv1.get_y(), rv2.get_y()) ? rv1.get_y() : rv2.get_y()) +
                              std::abs(rv1.get_y() - rv2.get_y()) *
                              std::abs(epsilon_le(rv1.get_y(), rv2.get_y()) ? rv1.get_x() : rv2.get_x()) /
@@ -82,7 +85,7 @@ namespace triangles {
                     return true;
                 }
             }
-            if ((rv1.get_y() * rv2.get_y()) < 0) {
+            if (!epsilon_leq(0, rv1.get_y() * rv2.get_y())) {
                 double x_c = (epsilon_le(rv1.get_x(), rv2.get_x()) ? rv1.get_x() : rv2.get_x()) +
                              std::abs(rv1.get_x() - rv2.get_x()) *
                              std::abs(epsilon_le(rv1.get_x(), rv2.get_x()) ? rv1.get_y() : rv2.get_y()) /
@@ -235,8 +238,8 @@ namespace triangles {
             auto z_coords = std::vector<double>{t2.p1.get_z(), t2.p2.get_z(), t2.p3.get_z()};
             std::sort(z_coords.begin(), z_coords.end());
 
-            if (epsilon_le(0, z_coords[0]) || epsilon_le(z_coords[2], 0)) {
-                if (epsilon_le(0, z_coords[0])) return std::make_pair(false, to_the_right);
+            if (!epsilon_le(z_coords[0], 0) || !epsilon_le(0, z_coords[2])) {
+                if (!epsilon_le(z_coords[0], 0)) return std::make_pair(false, to_the_right);
                 else return std::make_pair(false, to_the_left);
             } else if (epsilon_eq(z_coords[0],z_coords[2])) { //case with triangle in plane oxy
                 return std::make_pair(case_triangle_in_plane(t2, rv), intersecting);

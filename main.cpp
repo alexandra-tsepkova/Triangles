@@ -15,10 +15,10 @@ void quick_intersection (const std::vector<triangle> &triangles, std::vector<int
         auto result = triangles[indexes[0]].is_intersecting(triangles[indexes[i]]);
         if (result.first) {
             if (!is_first_intersected) {
-                intersected[indexes[i]] = true;
+                intersected[indexes[0]] = true;
                 is_first_intersected = true;
             }
-            intersected[indexes[0]] = true;
+            intersected[indexes[i]] = true;
         }
         switch (result.second) {
             case triangles::to_the_left:
@@ -66,27 +66,3 @@ int main() {
     }
     return 0;
 }
-
-
-//2
-//0 0 0 1 0 0 0 1 0
-//0 0.5 -0.5 0 0.5 0.5 -1 0 0
-//
-//3
-//0 0 0 1 0 0 0 1 0
-//5 5 5 5 5 5 5 5 5
-//0 0.5 -0.5 0 0.5 0.5 -1 0 0
-
-//2
-//0 0 0 1000000000 0 0 0 1000000000 0
-//0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
-//
-//2
-//0 0 0 0.0001 0 0 0 0.0001 0
-//0 0.0000005 -0.0000005 0 0.0000005 0.0000005 -0.000001 0 0
-//5
-//10 0 0 0 10 0 0 0 10
-//30 0 0 0 30 0 0 0 30
-//50 0 0 0 50 0 0 0 50
-//70 0 0 0 70 0 0 0 70
-//0 0 0 100 100 0 100 100 100
